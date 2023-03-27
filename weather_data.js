@@ -1,9 +1,9 @@
 function getWeatherData() {
     let weekData= document.getElementById("week").value;
-    var week = weekData.slice(-2);
+    let week = weekData.slice(-2);
     let year = weekData.slice(4);
     
-    var dateRanges = getDateRangeOfWeek(week, year);
+    let dateRanges = getDateRangeOfWeek(week, year);
     
     let startDate = dateRanges[0];
     let endDate = dateRanges[1];
@@ -23,26 +23,30 @@ function getWeatherData() {
         // request is ok 
         success: function (data) {
             var x = JSON.stringify(data);
-            console.log(x);
+            createTable(x);
         },
 
         // Error handling 
         error: function (error) {
-            console.log(`Error ${error}`);
+            $('<tr>').append(
+                $('<td>').text('An error Occurred'),
+            ).appendTo('#weather_data_table');
         }
     });
 }
+
 Date.prototype.getWeek = function () {
-    var target  = new Date(this.valueOf());
-    var dayNr   = (this.getDay() + 6) % 7;
+    let target  = new Date(this.valueOf());
+    let dayNr   = (this.getDay() + 6) % 7;
     target.setDate(target.getDate() - dayNr + 3);
-    var firstThursday = target.valueOf();
+    let firstThursday = target.valueOf();
     target.setMonth(0, 1);
     if (target.getDay() != 4) {
         target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
     }
     return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
+
 function getDateRangeOfWeek(weekNo, year){
     var d1 = new Date();
     numOfdaysPastSinceLastMonday = eval(d1.getDay()- 1);
@@ -59,3 +63,33 @@ function getDateRangeOfWeek(weekNo, year){
     var rangeIsTo = d1.getFullYear() + '-' + month + "-" + d1.getDate();
     return [rangeIsFrom, rangeIsTo];
 };
+
+function createTable(data) {
+    let response = $.parseJSON(data);
+    $('<tr>').append(
+        $('<th>').text('Day'),
+        $('<th>').text('Date'),
+        $('<th>').text('Min Temperature'),
+        $('<th>').text('Max Temperature'),
+    ).appendTo('#weather_data_table');
+
+    for(let i = 0; i < 7; i++) {
+        let maxTemp = response.daily.temperature_2m_max[i];
+        let minTemp = response.daily.temperature_2m_min[i];
+        let date = response.daily.time[i];
+        let dayName = getDayName(date);
+        $('<tr>').append(
+            $('<td>').text(dayName),
+            $('<td>').text(date),
+            $('<td>').text(minTemp),
+            $('<td>').text(maxTemp)
+        ).appendTo('#weather_data_table');
+    }
+    console.log(response);
+}
+
+function getDayName(dateStr, locale)
+{
+    let date = new Date(dateStr);
+    return date.toLocaleDateString(locale, { weekday: 'long' });        
+}
