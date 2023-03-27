@@ -28,9 +28,10 @@ function getWeatherData() {
 
         // Error handling 
         error: function (error) {
-            $('<tr>').append(
-                $('<td>').text('An error Occurred'),
-            ).appendTo('#weather_data_table');
+            $('#error').append(
+                'An error Occurred',
+            ).appendTo('#error');
+            $('#weather_data_table').empty();
         }
     });
 }
@@ -47,7 +48,7 @@ Date.prototype.getWeek = function () {
     return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
 
-function getDateRangeOfWeek(weekNo, year){
+function getDateRangeOfWeek(weekNo, year) {
     var d1 = new Date();
     numOfdaysPastSinceLastMonday = eval(d1.getDay()- 1);
     d1.setDate(d1.getDate() - numOfdaysPastSinceLastMonday);
@@ -85,11 +86,61 @@ function createTable(data) {
             $('<td>').text(maxTemp)
         ).appendTo('#weather_data_table');
     }
+    $('#topright').show();
     console.log(response);
 }
 
-function getDayName(dateStr, locale)
-{
+function getDayName(dateStr, locale) {
     let date = new Date(dateStr);
     return date.toLocaleDateString(locale, { weekday: 'long' });        
+}
+
+function generateXML() {
+    let xml = "<weatherData>\n";
+    $("#weather_data_table")
+    .find("tr").each(function() {
+        if($(this).find("td").eq(0).html()) {
+            xml += "<temperature>\n";
+            xml += "<day>"; 
+            xml += $(this).find("td").eq(0).html();  
+            xml += "</day>"; 
+            xml += "\n<date>"; 
+            xml += "\n<dateValue>"; 
+            xml += $(this).find("td").eq(1).html();  
+            xml += "</dateValue>"; 
+            xml += "\n<dateFormat>"; 
+            xml += "YYYY-MM-DD";
+            xml += "</dateFormat>"; 
+            xml += "\n</date>"; 
+            xml += "\n<min>"; 
+            xml += $(this).find("td").eq(2).html();  
+            xml += "</min>";
+            xml += "\n<max>"; 
+            xml += $(this).find("td").eq(3).html();   
+            xml += "</max>";
+            xml += "\n</temperature>";
+        }
+    } );
+    xml += "\n</weatherData>";
+    xml = jQuery.parseXML(xml);
+    xml = new XMLSerializer().serializeToString(xml);
+    saveFile(xml, 'weatherdata.xml', 'xml');
+    };
+    
+function saveFile(data, filename, type) {
+    var file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);  
+        }, 0); 
+    }
 }
